@@ -3,8 +3,8 @@
 ;; Author: David Thompson
 ;; Version: 0.1
 ;; Keywords: calendar
-;; Homepage: https://github.com/thomp/noaa
-;; URL: https://github.com/thomp/noaa
+;; Homepage: https://codeberg.org/thomp/noaa
+;; URL: https://codeberg.org/thomp/noaa
 ;; Package-Requires: ((emacs "27.1") (kv "0.0.19") (request "0.2.0") (s "1.12.0"))
 
 ;;; Commentary:
