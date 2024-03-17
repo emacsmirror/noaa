@@ -1,7 +1,5 @@
 # noaa.el
 
-<2024-02-11> Archived & moved to codeberg.org.
-
 *View a simple summary of an NOAA weather forecast*
 
 The [NOAA](http://www.noaa.gov) exposes a number of services which
