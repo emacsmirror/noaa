@@ -8,15 +8,6 @@ viewing USA forecast data at api.weather.gov.
 
 ---
 
-### Getting started without the Emacs package manager
-
-1. Download `noaa.el`.
-
-2. Load `noaa.el`. For example, you might add the following line to `~/.emacs`:
-
-    `(load "/path/to/noaa.el")`
-
-
 ## Use
 
 1. Use <kbd>M-x</kbd> `noaa` to invoke `noaa`.
@@ -63,6 +54,17 @@ suit your needs by modifying variables `noaa-daily-styles` and
 `noaa-hourly-styles` with reference to the NOAA api. Two useful
 reference URLs are indicated in the source code.
 
+
+### Getting started without the Emacs package manager
+
+As noaa.el depends on quite a few packages, it is most straightforward to install it, and the associated dependencies, using the Emacs package manager.
+
+The packages noaa.el leans on are listed in the `(require …)` sexps at the top of the file.
+
+1. Download `noaa.el`.
+2. Load `noaa.el`. For example, you might add the following line to `~/.emacs`:
+
+    `(load "/path/to/noaa.el")`
 
 
 ## License
