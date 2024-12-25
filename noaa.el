@@ -479,8 +479,9 @@ the corresponding forecast."
 	(funcall g)))))
 
 (defun noaa-osm-make-uri (location)
+  ;; Query format to retreive latitude and longitude data. This is a query to a server at `openstreetmap.org' that accepts a single location string as a parameter
   (let ((osm-api "https://nominatim.openstreetmap.org/search?q=%s&limit=1&format=json"))
-    (format noaa--osm-api (url-encode-url location))))
+    (format osm-api (url-encode-url location))))
 
 (defun noaa-osm-query (location callback)
   "Execute an OpenStreetMap search query, using LOCATION as the string
