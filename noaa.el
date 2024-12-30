@@ -734,6 +734,30 @@ bookmarks set."
            if (eq (bookmark-prop-get bm 'handler) #'osm-bookmark-jump)
            collect bm))
 
+(defun noaa-maybe-select-osm-bookmark ()
+  "Prompt the user to select an osm.el bookmark, if one or more are
+available in the regular Emacs bookmarks set. If selected, return the
+bookmark cdr (the bookmark key/value pairs as an alist). Return NIL if
+an osm.el bookmark is not selected."
+  (let ((osm-bookmarks (noaa--osm-bookmarks)))
+    (when osm-bookmarks
+      ;; (read-string "Location (RET to enter coordinates instead): ")
+      (let ((bm-name (completing-read "Bookmark (RET to enter coordinates): "
+                                      osm-bookmarks
+                                      nil
+                                      t
+                                      nil
+                                      nil
+                                      nil)))
+        (cond ((string-blank-p bm-name)
+               nil)
+              (t
+               (let ((bm (assoc bm-name osm-bookmarks 'string=)))
+                 (pcase-let ((`(,lat ,lon ,zoom) (bookmark-prop-get bm 'coordinates)))
+                   (cl-values (bookmark-prop-get bm 'location)
+                              lat
+                              lon)))))))))
+
 ;;
 ;; noaa mode
 ;;
