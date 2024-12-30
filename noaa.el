@@ -478,23 +478,6 @@ the corresponding forecast."
       (unless (noaa-unless-point-in-cache f)
 	(funcall g)))))
 
-(defun noaa-osm-make-uri (location)
-  ;; Query format to retreive latitude and longitude data. This is a query to a server at `openstreetmap.org' that accepts a single location string as a parameter
-  (let ((osm-api "https://nominatim.openstreetmap.org/search?q=%s&limit=1&format=json"))
-    (format osm-api (url-encode-url location))))
-
-(defun noaa-osm-query (location callback)
-  "Execute an OpenStreetMap search query, using LOCATION as the string
-value corresponding to the query Q key. CALLBACK specified the
-function which should be called upon successful completion of the
-query."
-  (request (noaa-osm-make-uri location)
-    :parser 'buffer-string
-    :error (function noaa-http-error-callback)
-    :status-code '((500 . (lambda (&rest _)
-                            (message "500: from openstreetmap"))))
-    :success callback))
-
 ;; metadata for an NOAA gridpoint
 (cl-defstruct noaa-point
   forecast-url				; string - e.g., "https://api.weather.gov/gridpoints/VEF/47,56/forecast"
