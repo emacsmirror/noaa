@@ -177,37 +177,6 @@ Shortcut for M-x `noaa' with a prefix argument."
 NUM is a string representation of a floating point number."
   (replace-regexp-in-string "\\.\\(....\\).*" ".\\1" num))
 
-(cl-defun noaa--osm-callback (&key data _response _error-thrown &allow-other-keys)
-  (unless data
-    (error "No data returned from openstreetmap.org"))
-  (let (lat
-	lon
-	(error-msg "Failed to retrieve coordinates from openstreetmap.org")
-        result)
-    (condition-case nil
-        (progn
-          (setq result (elt (json-read-from-string data)
-                            0))
-          (setq lat
-		(string-to-number (noaa--four-digit-precision (cdr (assq 'lat result)))))
-	  (setq lon
-		(string-to-number (noaa--four-digit-precision (cdr (assq 'lon result))))))
-      (error
-       (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
-       (insert ?\n ?1 error-msg)
-       (insert ?\n data)
-       (insert ?\n result)))
-    (cond ((and lat lon)
-	   (setq noaa-latitude  lat
-		 noaa-longitude lon)
-           ;; only set NOAA-LOCATION after successful query
-           (setq noaa-location
-                 (cdr (assq 'display_name (elt (json-read-from-string result) 0))))
-	   (noaa--once-lat-lon-set lat lon))
-          (t
-           (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
-           (insert ?\n ?2 error-msg)))))
-
 (defun noaa-aval (alist key)
   "Utility function to retrieve value associated with key KEY in alist ALIST."
   (let ((pair (assoc key alist)))
