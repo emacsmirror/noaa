@@ -724,6 +724,17 @@ See variables `noaa--daily-current-style' and `noaa--hourly-current-style'."
   (noaa-display-last-forecast))
 
 ;;
+;; Support selection of osm.el bookmarks
+;;
+
+(defun noaa--osm-bookmarks ()
+  "Return a list of osm.el bookmarks if present in the regular Emacs
+bookmarks set."
+  (cl-loop for bm in bookmark-alist
+           if (eq (bookmark-prop-get bm 'handler) #'osm-bookmark-jump)
+           collect bm))
+
+;;
 ;; noaa mode
 ;;
 
