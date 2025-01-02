@@ -119,18 +119,21 @@ and account for two possible strings: location and display-style.")
 ;;;###autoload
 (defun noaa ()
   (interactive)
-  (if current-prefix-arg
-      (cl-multiple-value-bind (loc lat lon)
-	  (noaa-prompt-user-for-location)
-	(cond ((not loc)
-	       (setq noaa-latitude  lat
-		     noaa-longitude lon)
-	       (setq noaa-location nil)	; Once responses from queries to points API are handled better, this should be set appropriately
-	       (noaa--once-lat-lon-set lat lon))
-	      (loc
-	       (noaa-osm-query loc
-			       (function noaa--osm-callback)))))
-    (noaa--once-lat-lon-set noaa-latitude noaa-longitude)))
+  (when current-prefix-arg
+    (cl-multiple-value-bind (loc lat lon)
+        (noaa-prompt-user-for-location)
+      (cond ((not loc)
+             (setq noaa-latitude  lat
+                   noaa-longitude lon)
+             (setq noaa-location nil)   ; Once responses from queries to points API are handled better, this should be set appropriately
+             )
+            (loc
+             (setq noaa-latitude  lat
+                   noaa-longitude lon)
+             (setq noaa-location
+                   (truncate-string-to-width loc
+                                             15 0 nil t))))))
+  (noaa--once-lat-lon-set noaa-latitude noaa-longitude))
 (defalias 'noaa-daily 'noaa "Retrieve and display the hourly forecast.")
 
 (defvar noaa-api-weather-gov--status-map
