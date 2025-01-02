@@ -19,6 +19,7 @@
 
 ;;; Code:
 
+(require 'bookmark)
 (require 'cl-lib)
 (require 'cl-extra)   ; cl-concatenate
 (require 'json)
@@ -119,18 +120,21 @@ and account for two possible strings: location and display-style.")
 ;;;###autoload
 (defun noaa ()
   (interactive)
-  (if current-prefix-arg
-      (cl-multiple-value-bind (loc lat lon)
-	  (noaa-prompt-user-for-location)
-	(cond ((not loc)
-	       (setq noaa-latitude  lat
-		     noaa-longitude lon)
-	       (setq noaa-location nil)	; Once responses from queries to points API are handled better, this should be set appropriately
-	       (noaa--once-lat-lon-set lat lon))
-	      (loc
-	       (noaa-osm-query loc
-			       (function noaa--osm-callback)))))
-    (noaa--once-lat-lon-set noaa-latitude noaa-longitude)))
+  (when current-prefix-arg
+    (cl-multiple-value-bind (loc lat lon)
+        (noaa-prompt-user-for-location)
+      (cond ((not loc)
+             (setq noaa-latitude  lat
+                   noaa-longitude lon)
+             (setq noaa-location nil)   ; Once responses from queries to points API are handled better, this should be set appropriately
+             )
+            (loc
+             (setq noaa-latitude  lat
+                   noaa-longitude lon)
+             (setq noaa-location
+                   (truncate-string-to-width loc
+                                             15 0 nil t))))))
+  (noaa--once-lat-lon-set noaa-latitude noaa-longitude))
 (defalias 'noaa-daily 'noaa "Retrieve and display the hourly forecast.")
 
 (defvar noaa-api-weather-gov--status-map
@@ -176,37 +180,6 @@ Shortcut for M-x `noaa' with a prefix argument."
   "Return NUM, limited to four digit precision.
 NUM is a string representation of a floating point number."
   (replace-regexp-in-string "\\.\\(....\\).*" ".\\1" num))
-
-(cl-defun noaa--osm-callback (&key data _response _error-thrown &allow-other-keys)
-  (unless data
-    (error "No data returned from openstreetmap.org"))
-  (let (lat
-	lon
-	(error-msg "Failed to retrieve coordinates from openstreetmap.org")
-        result)
-    (condition-case nil
-        (progn
-          (setq result (elt (json-read-from-string data)
-                            0))
-          (setq lat
-		(string-to-number (noaa--four-digit-precision (cdr (assq 'lat result)))))
-	  (setq lon
-		(string-to-number (noaa--four-digit-precision (cdr (assq 'lon result))))))
-      (error
-       (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
-       (insert ?\n ?1 error-msg)
-       (insert ?\n data)
-       (insert ?\n result)))
-    (cond ((and lat lon)
-	   (setq noaa-latitude  lat
-		 noaa-longitude lon)
-           ;; only set NOAA-LOCATION after successful query
-           (setq noaa-location
-                 (cdr (assq 'display_name (elt (json-read-from-string result) 0))))
-	   (noaa--once-lat-lon-set lat lon))
-          (t
-           (switch-to-buffer (get-buffer-create noaa-error-buffer-spec))
-           (insert ?\n ?2 error-msg)))))
 
 (defun noaa-aval (alist key)
   "Utility function to retrieve value associated with key KEY in alist ALIST."
@@ -478,23 +451,6 @@ the corresponding forecast."
       (unless (noaa-unless-point-in-cache f)
 	(funcall g)))))
 
-(defun noaa-osm-make-uri (location)
-  ;; Query format to retreive latitude and longitude data. This is a query to a server at `openstreetmap.org' that accepts a single location string as a parameter
-  (let ((osm-api "https://nominatim.openstreetmap.org/search?q=%s&limit=1&format=json"))
-    (format osm-api (url-encode-url location))))
-
-(defun noaa-osm-query (location callback)
-  "Execute an OpenStreetMap search query, using LOCATION as the string
-value corresponding to the query Q key. CALLBACK specified the
-function which should be called upon successful completion of the
-query."
-  (request (noaa-osm-make-uri location)
-    :parser 'buffer-string
-    :error (function noaa-http-error-callback)
-    :status-code '((500 . (lambda (&rest _)
-                            (message "500: from openstreetmap"))))
-    :success callback))
-
 ;; metadata for an NOAA gridpoint
 (cl-defstruct noaa-point
   forecast-url				; string - e.g., "https://api.weather.gov/gridpoints/VEF/47,56/forecast"
@@ -555,11 +511,15 @@ of POINT in NOAA-POINTS."
   (let ((location nil)
         (latitude nil)
         (longitude nil))
-    ;; TODO: It would be nice to have a list of locations in order to provide
-    ;;       completion candidates, but that would be a tremendous list.
-    (setq location
-	  (read-string "Location (RET to enter coordinates instead): "))
+    ;; If osm.el bookmarks are present, prefer these
+    (cl-multiple-value-bind (osm-loc osm-lat osm-lon)
+        (noaa-maybe-select-osm-bookmark)
+      (when osm-loc
+        (setq location osm-loc)
+        (setq latitude osm-lat)
+        (setq longitude osm-lon)))
     (when (string-blank-p (or location ""))
+      (read-from-minibuffer "To select a location by name, install osm.el and bookmark location(s) of interest. Press [Enter] to specify a location by latitude and longitude.")
       (setq location nil)
       (setq latitude
 	    (read-number
@@ -722,6 +682,41 @@ See variables `noaa--daily-current-style' and `noaa--hourly-current-style'."
      (mod (1+ noaa--daily-current-style)
           (length noaa-daily-styles))))
   (noaa-display-last-forecast))
+
+;;
+;; Support selection of osm.el bookmarks
+;;
+
+(defun noaa--osm-bookmarks ()
+  "Return a list of osm.el bookmarks if present in the regular Emacs
+bookmarks set."
+  (cl-loop for bm in bookmark-alist
+           if (eq (bookmark-prop-get bm 'handler) #'osm-bookmark-jump)
+           collect bm))
+
+(defun noaa-maybe-select-osm-bookmark ()
+  "Prompt the user to select an osm.el bookmark, if one or more are
+available in the regular Emacs bookmarks set. If selected, return the
+bookmark cdr (the bookmark key/value pairs as an alist). Return NIL if
+an osm.el bookmark is not selected."
+  (let ((osm-bookmarks (noaa--osm-bookmarks)))
+    (when osm-bookmarks
+      ;; (read-string "Location (RET to enter coordinates instead): ")
+      (let ((bm-name (completing-read "Bookmark (RET to enter coordinates): "
+                                      osm-bookmarks
+                                      nil
+                                      t
+                                      nil
+                                      nil
+                                      nil)))
+        (cond ((string-blank-p bm-name)
+               nil)
+              (t
+               (let ((bm (assoc bm-name osm-bookmarks 'string=)))
+                 (pcase-let ((`(,lat ,lon ,zoom) (bookmark-prop-get bm 'coordinates)))
+                   (cl-values (bookmark-prop-get bm 'location)
+                              lat
+                              lon)))))))))
 
 ;;
 ;; noaa mode
