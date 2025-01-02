@@ -19,6 +19,7 @@
 
 ;;; Code:
 
+(require 'bookmark)
 (require 'cl-lib)
 (require 'cl-extra)   ; cl-concatenate
 (require 'json)
