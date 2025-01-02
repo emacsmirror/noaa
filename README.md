@@ -50,7 +50,7 @@ digits of precision (eg. 45.1234).
 
 ## osm.el bookmarks
 
-The completion support provided by [vertico](https://github.com/minad/vertico) makes selection of osm.el bookmarks pretty straightforward.
+[osm.el](https://github.com/minad/osm), an OpenStreetMap map viewer, also provides bookmark support for geographic locations. `noaa` supports `osm.el` bookmarks. The completion support provided by [vertico](https://github.com/minad/vertico) makes selection of `osm.el` bookmarks pretty straightforward.
 
 
 ## Customization
