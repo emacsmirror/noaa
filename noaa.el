@@ -507,11 +507,15 @@ of POINT in NOAA-POINTS."
   (let ((location nil)
         (latitude nil)
         (longitude nil))
-    ;; TODO: It would be nice to have a list of locations in order to provide
-    ;;       completion candidates, but that would be a tremendous list.
-    (setq location
-	  (read-string "Location (RET to enter coordinates instead): "))
+    ;; If osm.el bookmarks are present, prefer these
+    (cl-multiple-value-bind (osm-loc osm-lat osm-lon)
+        (noaa-maybe-select-osm-bookmark)
+      (when osm-loc
+        (setq location osm-loc)
+        (setq latitude osm-lat)
+        (setq longitude osm-lon)))
     (when (string-blank-p (or location ""))
+      (read-from-minibuffer "To select a location by name, install osm.el and bookmark location(s) of interest. Press [Enter] to specify a location by latitude and longitude.")
       (setq location nil)
       (setq latitude
 	    (read-number
