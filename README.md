@@ -1,6 +1,6 @@
 # noaa.el
 
-*View a simple summary of an NOAA weather forecast*
+*View a summary of an NOAA weather forecast*
 
 The [NOAA](http://www.noaa.gov) exposes a number of services which
 provide weather-related data. **noaa.el** provides an interface for
@@ -16,7 +16,10 @@ viewing USA forecast data at api.weather.gov.
 
 ### Configure noaa.el
 
-If `calendar-latitude` and `calendar-latitude` are already defined, those values will be used. If they are not defined, ensure `noaa-latitude` and `noaa-longitude` are set to the desired values. For example, one might set them via `ielm` (<kbd>M-x</kbd> `ielm`):
+If `calendar-latitude` and `calendar-latitude` are already defined, those values will be used
+when noaa.el initially runs.
+
+If  `calendar-latitude` and `calendar-latitude` are  not already defined, `noaa-latitude` and `noaa-longitude` may be set to the desired values. For example, one might set them via `ielm` (<kbd>M-x</kbd> `ielm`):
 
     ;; set latitude and longitude for noaa.el
 	(setq noaa-latitude 45)
@@ -38,26 +41,29 @@ digits of precision (eg. 45.1234).
 
   - <kbd>c</kbd> to view a forecast for a different USA location.
 
-    - You can enter a CITY, ST location string, or if you just press
-      <kbd>enter</kbd> you'll be prompted for latitude and longitude
+    - If osm.el bookmarks are available, you can select an osm.el bookmark or, if you just press
+      <kbd>enter</kbd>, you'll be prompted for latitude and longitude
       coordinates.
 
   - <kbd>q</kbd> to quit
 
 
+## osm.el bookmarks
+
+The completion support provided by [vertico](https://github.com/minad/vertico) makes selection of osm.el bookmarks pretty straightforward.
+
 
 ## Customization
 
 The default forecast presentation styles don't present *all* of the
-possible data available from NOAA. You can customize the styles to
-suit your needs by modifying variables `noaa-daily-styles` and
+possible data available from NOAA. You can customize the styles by modifying variables `noaa-daily-styles` and
 `noaa-hourly-styles` with reference to the NOAA api. Two useful
 reference URLs are indicated in the source code.
 
 
 ### Getting started without the Emacs package manager
 
-As noaa.el depends on quite a few packages, it is most straightforward to install it, and the associated dependencies, using the Emacs package manager.
+As noaa.el depends on several packages, it is most straightforward to install it, and the associated dependencies, using the Emacs package manager.
 
 The packages noaa.el leans on are listed in the `(require …)` sexps at the top of the file.
 
